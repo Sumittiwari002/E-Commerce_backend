@@ -19,6 +19,7 @@ app.use(
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/brand", projectRoutes);
+app.use("/api/cart", projectRoutes);
 app.use("/api/category", projectRoutes);
 app.use("/api/product", projectRoutes);
 
