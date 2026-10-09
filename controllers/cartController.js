@@ -94,6 +94,176 @@ export const addToCart = async (req, res) => {
     }
 };
 
+export const removeFromCart = async (req, res) => {
+    try {
+
+        const { productId } = req.body;
+
+        // Check logged-in user
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "User not authenticated"
+            });
+        }
+
+        // Check productId
+        if (!productId) {
+            return res.status(400).json({
+                success: false,
+                message: "Product ID is required"
+            });
+        }
+
+        
+
+        // 1. Check product
+        const product = await Product.findById(productId);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+
+        // 2. Find user's cart
+        let cart = await Cart.findOne({
+            user: req.user._id
+        });
+
+        // 3. If cart doesn't exist
+        if (!cart) {
+
+            return res.status(404).json({
+                success: false,
+                message: "cart doesn't exist"
+            })
+        }
+
+        // 4. Check if product already exists
+        const existingItem = cart.items.find(
+            item => item.product.toString() === productId
+        );
+
+        if (!existingItem) {
+                return res.status(404).json({
+                    success: false,
+                    message: "Product not found in cart"
+                });
+            }
+
+            if (existingItem.quantity > 1) {
+                existingItem.quantity -= 1;
+            } else {
+                   cart.items = cart.items.filter(
+                    item => item.product.toString() !== productId
+                );
+            }
+
+        // 5. Save cart
+        await cart.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Product remove from cart",
+            cart
+        });
+
+    } catch (error) {
+
+        console.error("Remove from cart error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
+export const deleteProductFromCart = async (req, res) => {
+    try {
+
+        const { productId } = req.body;
+
+        // Check logged-in user
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "User not authenticated"
+            });
+        }
+
+        // Check productId
+        if (!productId) {
+            return res.status(400).json({
+                success: false,
+                message: "Product ID is required"
+            });
+        }
+
+        
+
+        // 1. Check product
+        const product = await Product.findById(productId);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
+
+        // 2. Find user's cart
+        let cart = await Cart.findOne({
+            user: req.user._id
+        });
+
+        // 3. If cart doesn't exist
+        if (!cart) {
+
+           return res.status(404).json({
+            success: false,
+            message: "cart doesn't exit"
+           })
+        }
+
+        // 4. Check if product already exists
+        const existingItem = cart.items.find(
+            item => item.product.toString() === productId
+        );
+
+        if (!existingItem) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found in cart"
+            });
+        }
+
+        cart.items = cart.items.filter(
+            item => item.product.toString() !== productId
+        );
+
+        // 5. Save cart
+        await cart.save();
+
+        return res.status(200).json({
+            success: true,
+            message: "Remove product completely from cart",
+            cart
+        });
+
+    } catch (error) {
+
+        console.error("Add to cart error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
+
 export const getCart = async (req, res) => {
     try {
 
@@ -106,7 +276,19 @@ export const getCart = async (req, res) => {
 
         const cart = await Cart.findOne({
             user: req.user._id
-        }).populate("items.product");
+                }).populate({
+                    path: "items.product",
+                    populate: [
+                        {
+                            path: "brandId",
+                            select: "name"
+                        },
+                        {
+                            path: "categoryId",
+                            select: "name"
+                        }
+                    ]
+                });
 
         if (!cart) {
             return res.status(200).json({
