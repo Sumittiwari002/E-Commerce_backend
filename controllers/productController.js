@@ -160,6 +160,26 @@ const productData= async (req, res)=>{
     }
 
 }
+
+const singleProduct = async (req, res)=>{
+    try{
+        const productId = req.params.productid; 
+        const product = await Product.findById(productId);
+        console.log(product);
+
+        return res.status(200).json({
+                success: false,
+                message: "Product found",
+                product
+            });
+    }
+    catch(err){
+        return res.status(500).json({
+                success: false,
+                message: "Error found"
+        });
+    }
+}
 export {
-    productAction, productData
+    productAction, productData, singleProduct
 }

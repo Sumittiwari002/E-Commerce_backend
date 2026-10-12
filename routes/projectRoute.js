@@ -3,7 +3,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
 import { brandAction, getAllBrands } from "../controllers/brandController.js";
 import { categoryAction, getAllcategories } from "../controllers/categoryController.js";
-import { productAction, productData } from "../controllers/productController.js";
+import { productAction, productData, singleProduct } from "../controllers/productController.js";
 import { addToCart, getCart, removeFromCart, deleteProductFromCart } from "../controllers/cartController.js";
 
 
@@ -15,6 +15,7 @@ router
 .get("/allBrands", getAllBrands)
 .get("/allcategories", getAllcategories)
 .get("/allProducts", productData)
+.get('/productdetails/:productid', singleProduct)
 .get("/getcart",authMiddleware, getCart)
 .post("/addtocart", authMiddleware, addToCart)
 .post("/removefromcart", authMiddleware, removeFromCart)
