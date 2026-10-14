@@ -94,88 +94,88 @@ export const addToWishlist = async (req, res) => {
     }
 };
 
-// export const deleteProductFromCart = async (req, res) => {
-//     try {
+export const deleteProductFromWishlist = async (req, res) => {
+    try {
 
-//         const { productId } = req.body;
+        const { productId } = req.body;
 
-//         // Check logged-in user
-//         if (!req.user) {
-//             return res.status(401).json({
-//                 success: false,
-//                 message: "User not authenticated"
-//             });
-//         }
+        // Check logged-in user
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "User not authenticated"
+            });
+        }
 
-//         // Check productId
-//         if (!productId) {
-//             return res.status(400).json({
-//                 success: false,
-//                 message: "Product ID is required"
-//             });
-//         }
+        // Check productId
+        if (!productId) {
+            return res.status(400).json({
+                success: false,
+                message: "Product ID is required"
+            });
+        }
 
         
 
-//         // 1. Check product
-//         const product = await Product.findById(productId);
+        // 1. Check product
+        const product = await Product.findById(productId);
 
-//         if (!product) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "Product not found"
-//             });
-//         }
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
 
-//         // 2. Find user's cart
-//         let cart = await Cart.findOne({
-//             user: req.user._id
-//         });
+        // 2. Find user's cart
+        let wishlist = await WishList.findOne({
+            user: req.user._id
+        });
 
-//         // 3. If cart doesn't exist
-//         if (!cart) {
+        // 3. If wishlist doesn't exist
+        if (!wishlist) {
 
-//            return res.status(404).json({
-//             success: false,
-//             message: "cart doesn't exit"
-//            })
-//         }
+           return res.status(404).json({
+            success: false,
+            message: "wishlist doesn't exit"
+           })
+        }
 
-//         // 4. Check if product already exists
-//         const existingItem = cart.items.find(
-//             item => item.product.toString() === productId
-//         );
+        // 4. Check if product already exists
+        const existingItem = wishlist.items.find(
+            item => item.product.toString() === productId
+        );
 
-//         if (!existingItem) {
-//             return res.status(404).json({
-//                 success: false,
-//                 message: "Product not found in cart"
-//             });
-//         }
+        if (!existingItem) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found in wishlist"
+            });
+        }
 
-//         cart.items = cart.items.filter(
-//             item => item.product.toString() !== productId
-//         );
+        wishlist.items = wishlist.items.filter(
+            item => item.product.toString() !== productId
+        );
 
-//         // 5. Save cart
-//         await cart.save();
+        // 5. Save wishlist
+        await wishlist.save();
 
-//         return res.status(200).json({
-//             success: true,
-//             message: "Remove product completely from cart",
-//             cart
-//         });
+        return res.status(200).json({
+            success: true,
+            message: "Remove product completely from cart",
+            wishlist
+        });
 
-//     } catch (error) {
+    } catch (error) {
 
-//         console.error("Add to cart error:", error);
+        console.error("Add to cart error:", error);
 
-//         return res.status(500).json({
-//             success: false,
-//             message: error.message
-//         });
-//     }
-// };
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+};
 
 export const getWishlist = async (req, res) => {
     try {
