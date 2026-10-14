@@ -5,7 +5,7 @@ import { connectRedis } from "./config/redis.js";
 const startServer = async () => {
   try {
     await connectDB();
-    // console.log("MongoDB connected successfully");
+    // console.log(process.cwd());
 
     await connectRedis();
     // console.log("Redis connected successfully");

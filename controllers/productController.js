@@ -93,11 +93,7 @@ const productAction = async (req, res) =>{
             // console.log(req.body);
             // console.log(req.file.buffer);
 
-            const uploadPath = path.join(
-                process.cwd(),
-                "assets",
-                "products"
-            );
+            const uploadPath = path.join( process.cwd(), "assets", "products");
 
             await fs.promises.mkdir(uploadPath, {
                 recursive: true,
@@ -164,8 +160,17 @@ const productData= async (req, res)=>{
 const singleProduct = async (req, res)=>{
     try{
         const productId = req.params.productid; 
-        const product = await Product.findById(productId);
+        const product = await Product.findById(productId)
+            .populate("brandId", "name")
+            .populate("categoryId", "name");
         console.log(product);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found"
+            });
+        }
 
         return res.status(200).json({
                 success: false,

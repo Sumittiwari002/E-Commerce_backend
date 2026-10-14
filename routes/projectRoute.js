@@ -5,6 +5,7 @@ import { brandAction, getAllBrands } from "../controllers/brandController.js";
 import { categoryAction, getAllcategories } from "../controllers/categoryController.js";
 import { productAction, productData, singleProduct } from "../controllers/productController.js";
 import { addToCart, getCart, removeFromCart, deleteProductFromCart } from "../controllers/cartController.js";
+import { addToWishlist, getWishlist } from "../controllers/wishlistController.js";
 
 
 
@@ -17,7 +18,9 @@ router
 .get("/allProducts", productData)
 .get('/productdetails/:productid', singleProduct)
 .get("/getcart",authMiddleware, getCart)
+.get("/getwishlist",authMiddleware, getWishlist)
 .post("/addtocart", authMiddleware, addToCart)
+.post("/addtowishlist", authMiddleware, addToWishlist)
 .post("/removefromcart", authMiddleware, removeFromCart)
 .post("/deleteproductfromcart", authMiddleware, deleteProductFromCart)
 .post("/brand-action", authMiddleware, adminMiddleware, brandAction)
