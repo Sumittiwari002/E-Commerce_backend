@@ -2,13 +2,27 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 
 export const getProfile = async (req, res)=>{
-    res.status(200).json({
-        success: true,
-        message: "Profile fetched successfully",
-        data: {
-            user: req.user
-        }
-    });
+    try{
+        let users = await User.find();
+
+        res.status(200).json({
+            success: true,
+            message: "Profile fetched successfully",
+            data: {
+                user: req.user
+            }
+        });
+
+    }
+    catch(error){
+        console.error("User Fetch Error", error);
+
+        res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+    
 };
 
 export const passwordUpdate = async (req, res)=>{

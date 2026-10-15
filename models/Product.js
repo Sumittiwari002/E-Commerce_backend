@@ -33,6 +33,10 @@ const ProductSchema = new mongoose.Schema(
       type: String,
       trim: true
     },
+    
+    cloudinaryPublicId: {
+    type: String,
+    },
 
     brandId: {
       type: mongoose.Schema.Types.ObjectId,
