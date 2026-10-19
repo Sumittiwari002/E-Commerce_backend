@@ -1,10 +1,16 @@
 import { redisClient } from "../config/redis.js";
 import User from "../models/User.js";
 import jwt from "jsonwebtoken";
+import crypto from "crypto";
 import {
   generateAccessToken,
   generateRefreshToken,
+  refreshKey,
+  refreshCookieOptions,
+  REFRESH_TTL_SECONDS,
+  REFRESH_TTL_MS,
 } from "../utils/tokenUtils.js";
+
 const register = async (req, res) => {
   try {
     const { name, mobile, email, password } = req.body;
@@ -47,7 +53,8 @@ const register = async (req, res) => {
         },
       },
     });
-  } catch (error) {
+  } 
+   catch (error) {
     console.log(error.message);
 
     res.status(500).json({
@@ -91,13 +98,19 @@ const login = async (req, res) => {
     }
 
     const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(user._id);
 
-    console.log(accessToken);
-    console.log(refreshToken);
+    // every login = its own session id, so a 2nd login (frontend, another
+    // Postman tab, phone...) no longer overwrites / invalidates this one
+    const sessionId = crypto.randomUUID();
+    const refreshToken = generateRefreshToken(user._id, sessionId);
 
-    await redisClient.set(`refreshToken:${user._id}`, refreshToken, {
-      EX: 7 * 24 * 60 * 60,
+    await redisClient.set(refreshKey(user._id, sessionId), refreshToken, {
+      EX: REFRESH_TTL_SECONDS,
+    });
+
+    res.cookie("refreshToken", refreshToken, {
+      ...refreshCookieOptions,
+      maxAge: REFRESH_TTL_MS,
     });
 
     // Login successful
@@ -110,9 +123,10 @@ const login = async (req, res) => {
           name: user.name,
           mobile: user.mobile,
           email: user.email,
+          status: user.status,
         },
         accessToken,
-        refreshToken,
+        // refreshToken,
       },
     });
   } catch (error) {
@@ -127,7 +141,8 @@ const login = async (req, res) => {
 
 const refreshAccessToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    // cookie (browser / Postman cookie jar) first, body as fallback
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -136,43 +151,37 @@ const refreshAccessToken = async (req, res) => {
       });
     }
 
-    // Verify refresh token
-    const decoded = jwt.verify(
-      refreshToken,
-      process.env.JWT_REFRESH_SECRET
-    );
+    // 1. Signature + expiry check (throws if bad)
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+    const { userId, jti } = decoded;
 
-    console.log("Decoded value:", decoded);
+    // Tokens issued before this change have no jti -> force a fresh login
+    if (!jti) {
+      return res.status(401).json({
+        success: false,
+        message: "Refresh token is outdated, please login again",
+      });
+    }
 
-    const userId = decoded.userId;
+    // 2. Is this exact session still stored in Redis?
+    const storedToken = await redisClient.get(refreshKey(userId, jti));
 
-    // Get refresh token from Redis
-    const storedToken = await redisClient.get(
-      `refreshToken:${userId}`
-    );
-
-    console.log("Redis Token =", storedToken);
-    console.log("Request Token =", refreshToken);
-
-    // Check whether token exists in Redis
     if (!storedToken) {
       return res.status(401).json({
         success: false,
-        message: "Refresh token not found or expired",
+        message: "Session expired or logged out, please login again",
       });
     }
 
-    // Compare tokens
     if (storedToken !== refreshToken) {
       return res.status(401).json({
         success: false,
-        message: "Invalid refresh token",
+        message: "Refresh token does not match stored session",
       });
     }
 
-    // Check whether user still exists
+    // 3. User still exists?
     const user = await User.findById(userId);
-
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -180,27 +189,25 @@ const refreshAccessToken = async (req, res) => {
       });
     }
 
-    // Generate new access token
+    // 4. Issue a new access token
     const accessToken = generateAccessToken(user._id);
 
     return res.status(200).json({
       success: true,
       message: "Access token refreshed successfully",
-      data: {
-        accessToken,
-      },
+      data: { accessToken },
     });
-
   } catch (error) {
-
     if (error.name === "TokenExpiredError") {
       return res.status(401).json({
         success: false,
-        message: "Refresh token has expired",
+        message: "Refresh token has expired, please login again",
       });
     }
 
     if (error.name === "JsonWebTokenError") {
+      // e.g. "invalid signature" -> token signed with a different JWT_REFRESH_SECRET
+      console.log("Refresh JWT error:", error.message);
       return res.status(401).json({
         success: false,
         message: "Invalid refresh token",
@@ -208,60 +215,42 @@ const refreshAccessToken = async (req, res) => {
     }
 
     console.error("Refresh Token Error:", error);
-
     return res.status(500).json({
       success: false,
       message: "Internal server error",
     });
   }
 };
- const logout = async function (req, res) {
-    try {
-      const { refreshToken } = req.body;
 
-      if (!refreshToken) {
-        return res.status(400).json({
-          success: false,
-          message: "Refresh token is required",
-        });
+const logout = async (req, res) => {
+  try {
+    // logout must work from the cookie too - the browser can't read httpOnly cookies
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+
+    if (refreshToken) {
+      try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        if (decoded.jti) {
+          await redisClient.del(refreshKey(decoded.userId, decoded.jti));
+        }
+      } catch (err) {
+        // expired / invalid token -> nothing to delete in Redis, still clear cookie
       }
-
-      //Verify  refresh token
-
-      const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
-
-      const userId = decoded.userId;
-
-      //Delete refresh token from Redis
-
-      await redisClient.del(`refreshToken:${userId}`);
-
-      return res.status(200).json({
-        success: true,
-        message: "Logout successful",
-      });
-    } catch (error) {
-      if (error.name === "TokenExpiredError") {
-        return res.status(200).json({
-          success: true,
-          message: "Logout successful",
-        });
-      }
-
-      if (error.name === "JsonWebTokenError") {
-        return res.status(401).json({
-          success: false,
-          message: "Invalid refresh Token",
-        });
-      }
-
-      console.error("Logout Error:", error);
-
-      return res.status(500).json({
-        success: false,
-        message: "Internal server error",
-      });
     }
-  };
+
+    res.clearCookie("refreshToken", refreshCookieOptions);
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout successful",
+    });
+  } catch (error) {
+    console.error("Logout Error:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+    });
+  }
+};
 
 export { register, login, refreshAccessToken, logout };

@@ -4,17 +4,20 @@ import projectRoutes from "./routes/projectRoute.js";
 import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import path from "path";
+import cookieParser from "cookie-parser";
+
 
 const app = express();
 
-app.use(cors());
+app.use(cors({origin: process.env.FRONTEND_URL, // Your frontend URL
+    credentials: true,
+  })
+);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-app.use(
-  "/assets",
-  express.static(path.join(process.cwd(), "assets"))
-);
+app.use("/assets", express.static(path.join(process.cwd(), "assets")));
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
