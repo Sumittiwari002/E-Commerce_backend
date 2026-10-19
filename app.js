@@ -13,6 +13,7 @@ app.use(cors({origin: process.env.FRONTEND_URL, // Your frontend URL
     credentials: true,
   })
 );
+console.log("Frontend URL:", process.env.FRONTEND_URL);
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
