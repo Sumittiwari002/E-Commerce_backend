@@ -79,7 +79,7 @@ export const removeBrand = async (req, res) =>
             await Brand.findByIdAndDelete(brandId);
 
             return res.status(200).json({
-                success: false,
+                success: true,
                 message: "Brand Removed successfully",
 
         })

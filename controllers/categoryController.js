@@ -68,3 +68,36 @@ export const getAllcategories = async (req, res) =>{
         });
     }
 }
+
+export const removeCategory = async (req, res) =>
+    {
+    try{
+        const {categoryId} = req.body;
+
+        if(!categoryId )
+        {
+            return res.status(400).json({
+                    success: false,
+                    message: "Send categoryId"
+            });
+
+        }
+        
+       
+            await Category.findByIdAndDelete(categoryId);
+
+            return res.status(200).json({
+                success: true,
+                message: "Category Removed successfully",
+
+        })
+    }
+    catch(error){
+        console.error("Category Remove Error:", error);
+
+        return res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+}

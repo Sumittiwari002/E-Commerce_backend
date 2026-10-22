@@ -2,7 +2,7 @@ import express from "express";
 import authMiddleware from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
 import { brandAction, getAllBrands, removeBrand } from "../controllers/brandController.js";
-import { categoryAction, getAllcategories } from "../controllers/categoryController.js";
+import { categoryAction, getAllcategories, removeCategory } from "../controllers/categoryController.js";
 import { productAction, productData, singleProduct } from "../controllers/productController.js";
 import { addToCart, getCart, removeFromCart, deleteProductFromCart } from "../controllers/cartController.js";
 import { addToWishlist, getWishlist, deleteProductFromWishlist } from "../controllers/wishlistController.js";
@@ -23,6 +23,7 @@ router
 .post("/addtowishlist", authMiddleware, addToWishlist)
 .post("/removefromcart", authMiddleware, removeFromCart)
 .post("/removebrand", authMiddleware, removeBrand)
+.post("/removecategory", authMiddleware, removeCategory)
 .post("/removefromwishlist", authMiddleware, deleteProductFromWishlist)
 .post("/deleteproductfromcart", authMiddleware, deleteProductFromCart)
 .post("/brand-action", authMiddleware, adminMiddleware, brandAction)
