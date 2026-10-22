@@ -22,9 +22,7 @@ export const brandAction = async (req, res) => {
         });
         }
 
-        await Brand.create({
-            name
-        });
+        await Brand.create({name});
 
         res.status(201).json({
             success: true,
@@ -57,6 +55,39 @@ export const getAllBrands = async (req, res) =>{
         console.error("Brand Fetch Error", error);
 
             res.status(500).json({
+            success: false,
+            message: error.message
+        });
+    }
+}
+
+export const removeBrand = async (req, res) =>
+    {
+    try{
+        const {brandId} = req.body;
+
+        if(!brandId )
+        {
+            return res.status(400).json({
+                    success: false,
+                    message: "Send Brand Id"
+            });
+
+        }
+        
+       
+            await Brand.findByIdAndDelete(brandId);
+
+            return res.status(200).json({
+                success: false,
+                message: "Brand Removed successfully",
+
+        })
+    }
+    catch(error){
+        console.error("Brand Remove Error:", error);
+
+        return res.status(500).json({
             success: false,
             message: error.message
         });

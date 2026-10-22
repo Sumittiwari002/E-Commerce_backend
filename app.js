@@ -9,7 +9,7 @@ import cookieParser from "cookie-parser";
 
 const app = express();
 
-app.use(cors({origin: process.env.FRONTEND_URL, // Your frontend URL
+app.use(cors({origin: process.env.FRONTEND_URL, 
     credentials: true,
   })
 );
