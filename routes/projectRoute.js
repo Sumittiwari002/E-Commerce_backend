@@ -3,7 +3,7 @@ import authMiddleware from "../middleware/authMiddleware.js";
 import adminMiddleware from "../middleware/adminMiddleware.js";
 import { brandAction, getAllBrands, removeBrand } from "../controllers/brandController.js";
 import { categoryAction, getAllcategories, removeCategory } from "../controllers/categoryController.js";
-import { productAction, productData, singleProduct } from "../controllers/productController.js";
+import { productAction, productData, singleProduct,RemoveProduct } from "../controllers/productController.js";
 import { addToCart, getCart, removeFromCart, deleteProductFromCart } from "../controllers/cartController.js";
 import { addToWishlist, getWishlist, deleteProductFromWishlist } from "../controllers/wishlistController.js";
 
@@ -22,8 +22,9 @@ router
 .post("/addtocart", authMiddleware, addToCart)
 .post("/addtowishlist", authMiddleware, addToWishlist)
 .post("/removefromcart", authMiddleware, removeFromCart)
-.post("/removebrand", authMiddleware, removeBrand)
-.post("/removecategory", authMiddleware, removeCategory)
+.post("/removebrand", authMiddleware, adminMiddleware, removeBrand)
+.post("/removeproduct", authMiddleware, adminMiddleware, RemoveProduct)
+.post("/removecategory", authMiddleware, adminMiddleware, removeCategory)
 .post("/removefromwishlist", authMiddleware, deleteProductFromWishlist)
 .post("/deleteproductfromcart", authMiddleware, deleteProductFromCart)
 .post("/brand-action", authMiddleware, adminMiddleware, brandAction)
